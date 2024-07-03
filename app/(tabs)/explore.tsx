@@ -1,102 +1,146 @@
-import Ionicons from '@expo/vector-icons/Ionicons';
-import { StyleSheet, Image, Platform } from 'react-native';
 
-import { Collapsible } from '@/components/Collapsible';
-import { ExternalLink } from '@/components/ExternalLink';
-import ParallaxScrollView from '@/components/ParallaxScrollView';
+import { GestureResponderEvent, StyleSheet,Text,TextInput,TouchableOpacity,View, useColorScheme } from 'react-native';
+import { Colors } from '@/constants/Colors';
 import { ThemedText } from '@/components/ThemedText';
-import { ThemedView } from '@/components/ThemedView';
+import { useState, useEffect } from 'react';
+import {ExercicioType} from '../../utils/ExercicioType';
+import {db} from '../../db';
+import ParallaxScrollView from '@/components/ParallaxScrollView';
+import { ListaItemType } from '@/utils/ListaItemType';
+import { adicionarExercicioParaLista } from '@/dbFunctions';
+import { useExerciciosContext } from '@/context/context';
 
 export default function TabTwoScreen() {
+  const [listaExercicios,setListaExercicios] = useState<ExercicioType[]>([]);
+  const [listaBusca,setListaBusca] = useState<ExercicioType[]>([]);
+  const {minhaLista,adicionarExercicio} = useExerciciosContext();
+  const [busca,setBusca] = useState("");
+
+  const fetchExercicios = ()=>{
+    try{
+    const data = db.exercicios;
+    setListaExercicios(data);
+    setListaBusca(data);
+    }catch(error){
+      console.log(error);
+    }
+  }
+
+  const handleSearch = (e : string)=>{
+    try{
+      setBusca(e);
+      let listaFiltrada = listaExercicios.filter((exercicio)=>{return exercicio.titulo.toUpperCase().includes(e.toUpperCase())});
+      setListaBusca(listaFiltrada);
+    }catch(error){
+      console.log(error);
+    }
+  }
+
+  useEffect(()=>{
+    fetchExercicios();
+  },[]);
+
+  const colorScheme = useColorScheme();
+
+  function handleAddButton(id: number): void {
+    const exercicioSelecionado = listaExercicios.find(el => el.id === id);
+    if (exercicioSelecionado) {
+      const exercicioAdicionado: ListaItemType = {
+        id: minhaLista.length > 0 ? minhaLista[minhaLista.length - 1].id + 1 : 0,
+        exercicioId: exercicioSelecionado.id,
+        series: 0,
+        repeticoes: 0,
+        pr: 0,
+      };
+      adicionarExercicio(exercicioAdicionado);
+    }
+  }
+
   return (
-    <ParallaxScrollView
-      headerBackgroundColor={{ light: '#D0D0D0', dark: '#353636' }}
-      headerImage={<Ionicons size={310} name="code-slash" style={styles.headerImage} />}>
-      <ThemedView style={styles.titleContainer}>
-        <ThemedText type="title">Explore</ThemedText>
-      </ThemedView>
-      <ThemedText>This app includes example code to help you get started.</ThemedText>
-      <Collapsible title="File-based routing">
-        <ThemedText>
-          This app has two screens:{' '}
-          <ThemedText type="defaultSemiBold">app/(tabs)/index.tsx</ThemedText> and{' '}
-          <ThemedText type="defaultSemiBold">app/(tabs)/explore.tsx</ThemedText>
-        </ThemedText>
-        <ThemedText>
-          The layout file in <ThemedText type="defaultSemiBold">app/(tabs)/_layout.tsx</ThemedText>{' '}
-          sets up the tab navigator.
-        </ThemedText>
-        <ExternalLink href="https://docs.expo.dev/router/introduction">
-          <ThemedText type="link">Learn more</ThemedText>
-        </ExternalLink>
-      </Collapsible>
-      <Collapsible title="Android, iOS, and web support">
-        <ThemedText>
-          You can open this project on Android, iOS, and the web. To open the web version, press{' '}
-          <ThemedText type="defaultSemiBold">w</ThemedText> in the terminal running this project.
-        </ThemedText>
-      </Collapsible>
-      <Collapsible title="Images">
-        <ThemedText>
-          For static images, you can use the <ThemedText type="defaultSemiBold">@2x</ThemedText> and{' '}
-          <ThemedText type="defaultSemiBold">@3x</ThemedText> suffixes to provide files for
-          different screen densities
-        </ThemedText>
-        <Image source={require('@/assets/images/react-logo.png')} style={{ alignSelf: 'center' }} />
-        <ExternalLink href="https://reactnative.dev/docs/images">
-          <ThemedText type="link">Learn more</ThemedText>
-        </ExternalLink>
-      </Collapsible>
-      <Collapsible title="Custom fonts">
-        <ThemedText>
-          Open <ThemedText type="defaultSemiBold">app/_layout.tsx</ThemedText> to see how to load{' '}
-          <ThemedText style={{ fontFamily: 'SpaceMono' }}>
-            custom fonts such as this one.
-          </ThemedText>
-        </ThemedText>
-        <ExternalLink href="https://docs.expo.dev/versions/latest/sdk/font">
-          <ThemedText type="link">Learn more</ThemedText>
-        </ExternalLink>
-      </Collapsible>
-      <Collapsible title="Light and dark mode components">
-        <ThemedText>
-          This template has light and dark mode support. The{' '}
-          <ThemedText type="defaultSemiBold">useColorScheme()</ThemedText> hook lets you inspect
-          what the user's current color scheme is, and so you can adjust UI colors accordingly.
-        </ThemedText>
-        <ExternalLink href="https://docs.expo.dev/develop/user-interface/color-themes/">
-          <ThemedText type="link">Learn more</ThemedText>
-        </ExternalLink>
-      </Collapsible>
-      <Collapsible title="Animations">
-        <ThemedText>
-          This template includes an example of an animated component. The{' '}
-          <ThemedText type="defaultSemiBold">components/HelloWave.tsx</ThemedText> component uses
-          the powerful <ThemedText type="defaultSemiBold">react-native-reanimated</ThemedText> library
-          to create a waving hand animation.
-        </ThemedText>
-        {Platform.select({
-          ios: (
-            <ThemedText>
-              The <ThemedText type="defaultSemiBold">components/ParallaxScrollView.tsx</ThemedText>{' '}
-              component provides a parallax effect for the header image.
-            </ThemedText>
-          ),
-        })}
-      </Collapsible>
+    <ParallaxScrollView style={styles.container}>
+      <View style={styles.headerView}>
+        <Text style={styles.title}>
+          Explore novos exercícios
+        </Text>
+        <TextInput style={styles.input} value={busca} onChangeText={handleSearch} placeholder='Buscar exercício'/>
+      </View>
+      <View style={styles.list}>
+
+
+        {listaBusca.map((exercicio)=>(
+          <View style={{...styles.listItem,backgroundColor: Colors[colorScheme ?? 'light'].background}} key={exercicio.id}>
+            <ThemedText type='subtitle'>{exercicio.titulo}</ThemedText>
+            <ThemedText type='default' style={{color: '#ed1539',marginBottom:15}}>{exercicio.grupo}</ThemedText>
+            <TouchableOpacity style={styles.button} onPress={()=>{handleAddButton(exercicio.id!)}}>
+              <Text style={{textAlign:'center',fontSize: 16,color:'white',fontWeight:'bold'}}>Adicionar a lista</Text>
+            </TouchableOpacity>
+          </View>
+        ))}
+
+      </View>
     </ParallaxScrollView>
   );
 }
 
 const styles = StyleSheet.create({
-  headerImage: {
-    color: '#808080',
-    bottom: -90,
-    left: -35,
-    position: 'absolute',
+  container: {
+    flex: 1
   },
-  titleContainer: {
-    flexDirection: 'row',
-    gap: 8,
+  content: {
+    flex: 1,
+    marginTop:50,
+    padding:32,
+    gap:16,
+    alignItems:"center"
   },
+
+  title:{
+    paddingTop: 40,
+    fontSize:32,
+    textAlign:'center',
+    fontWeight:'bold',
+    color:'white'
+
+  },
+
+  input: {
+    backgroundColor: 'white',
+    padding:10,
+    borderRadius: 10,
+    width: '100%',
+    marginVertical: 15,
+    fontSize: 16,
+    textAlign: 'center'
+  },
+  headerView: {
+    justifyContent: "center",
+    backgroundColor: '#ed1539',
+    width: '100%',
+    marginTop: 0,
+    padding:32,
+    gap: 16,
+  },
+
+  list: {
+    flex: 1,
+    flexDirection: 'column',
+    alignItems: 'center',
+    width: '100%',
+    padding: 32,
+    gap: 16
+  },
+  listItem:{
+    width: '100%',
+    borderWidth: 1,
+    padding: 12,
+    borderRadius: 15
+  },
+  button:{
+    width: '100%',
+    backgroundColor: "#ed1539",
+    paddingVertical: 20,
+    color: 'white',
+    borderRadius: 15,
+    textAlign:'center'
+  }
 });
